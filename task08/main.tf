@@ -46,7 +46,7 @@ module "acr" {
   git_repo_url        = var.git_repo_url
   git_branch          = var.git_branch
   git_pat             = var.git_pat
-  dockerfile_path     = "task08/application/Dockerfile"
+  dockerfile_path     = "Dockerfile"
   docker_context_path = "task08/application"
 }
 
