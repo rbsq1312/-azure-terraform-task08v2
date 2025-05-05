@@ -49,6 +49,11 @@ variable "os_disk_type" {
   default     = "Ephemeral"
 }
 
+variable "default_node_pool_os_disk_size_gb" {
+  description = "OS Disk size in GB for the default node pool."
+  type        = number
+}
+
 variable "acr_id" {
   description = "The ID of the ACR"
   type        = string

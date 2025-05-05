@@ -51,20 +51,21 @@ module "acr" {
 }
 
 module "aks" {
-  source              = "./modules/aks"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-  aks_name            = local.aks_name
-  tags                = local.common_tags
-  dns_prefix          = local.aks_name
-  node_pool_name      = var.aks_node_pool_name
-  node_count          = var.aks_node_count
-  vm_size             = var.aks_vm_size      # Ensure this uses the corrected value via tfvars/env
-  os_disk_type        = var.aks_os_disk_type # Ensure this uses the required value via tfvars/env
-  acr_id              = module.acr.acr_id
-  key_vault_id        = module.keyvault.key_vault_id
-  tenant_id           = data.azurerm_client_config.current.tenant_id
-  key_vault_name      = module.keyvault.key_vault_name
+  source                            = "./modules/aks"
+  resource_group_name               = azurerm_resource_group.rg.name
+  location                          = azurerm_resource_group.rg.location
+  aks_name                          = local.aks_name
+  tags                              = local.common_tags
+  dns_prefix                        = local.aks_name
+  node_pool_name                    = var.aks_node_pool_name
+  node_count                        = var.aks_node_count
+  vm_size                           = var.aks_vm_size
+  os_disk_type                      = var.aks_os_disk_type
+  default_node_pool_os_disk_size_gb = var.default_node_pool_os_disk_size_gb
+  acr_id                            = module.acr.acr_id
+  key_vault_id                      = module.keyvault.key_vault_id
+  tenant_id                         = data.azurerm_client_config.current.tenant_id
+  key_vault_name                    = module.keyvault.key_vault_name
 
   depends_on = [
     module.acr,
@@ -97,7 +98,6 @@ module "aci" {
   ]
 }
 
-# Kubernetes manifests for deploying the application to AKS
 resource "kubectl_manifest" "secret_provider_class" {
   yaml_body = templatefile("${path.module}/k8s-manifests/secret-provider.yaml.tftpl", {
     kv_name                    = module.keyvault.key_vault_name
@@ -127,23 +127,14 @@ resource "kubectl_manifest" "deployment" {
     image_tag        = local.docker_image_tag
   })
 
-  # Add this line to prevent timeout during rollout check
+  # Ensure wait_for_rollout is false
   wait_for_rollout = false
-
-  # Ensure the wait_for block is removed or commented out
-  # wait_for {
-  #   field {
-  #     key   = "status.readyReplicas"
-  #     value = "1"
-  #   }
-  # }
 
   depends_on = [
     kubectl_manifest.service
   ]
 }
 
-# Get the LoadBalancer IP address
 data "kubernetes_service" "app_service" {
   metadata {
     name = "redis-flask-app-service"
@@ -151,6 +142,6 @@ data "kubernetes_service" "app_service" {
 
   depends_on = [
     kubectl_manifest.service,
-    kubectl_manifest.deployment # Still depend on deployment apply starting
+    kubectl_manifest.deployment
   ]
 }

@@ -84,11 +84,18 @@ variable "aks_node_count" {
 variable "aks_vm_size" {
   description = "The size of the Virtual Machine in the default node pool in AKS"
   type        = string
-  default     = "Standard_D2ads_v5"
+  default     = "Standard_D2ads_v5" # Task parameter
 }
 
 variable "aks_os_disk_type" {
   description = "The type of OS disk in the default node pool in AKS"
   type        = string
-  default     = "Ephemeral"
+  default     = "Ephemeral" # Task parameter
 }
+
+variable "default_node_pool_os_disk_size_gb" {
+  description = "The size of the OS disk in GB for the default node pool"
+  type        = number
+  default     = 60
+}
+
