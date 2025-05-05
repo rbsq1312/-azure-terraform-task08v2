@@ -97,7 +97,7 @@ module "aci" {
   ]
 }
 
-# Kubernetes manifests for deploying the application to AKS
+
 resource "kubectl_manifest" "secret_provider_class" {
   yaml_body = templatefile("${path.module}/k8s-manifests/secret-provider.yaml.tftpl", {
     kv_name                    = module.keyvault.key_vault_name
@@ -127,19 +127,11 @@ resource "kubectl_manifest" "deployment" {
     image_tag        = local.docker_image_tag
   })
 
-  wait_for {
-    field {
-      key   = "status.readyReplicas"
-      value = "1"
-    }
-  }
-
   depends_on = [
     kubectl_manifest.service
   ]
 }
 
-# Get the LoadBalancer IP address
 data "kubernetes_service" "app_service" {
   metadata {
     name = "redis-flask-app-service"
