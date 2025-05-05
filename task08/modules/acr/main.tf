@@ -47,7 +47,7 @@ resource "azurerm_container_registry_task_schedule_run_now" "schedule_run" {
 
   # Add a short timeout to prevent long waits
   timeouts {
-    create = "5s"
+    create = "15m"
   }
 
   # Add lifecycle block to ignore failures
