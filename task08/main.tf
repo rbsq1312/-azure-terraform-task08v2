@@ -135,7 +135,7 @@ resource "kubectl_manifest" "deployment" {
   ]
 }
 
-data "kubernetes_service" "app_service" {
+data "kubernetes_service" "app" {
   metadata {
     name = "redis-flask-app-service"
   }
