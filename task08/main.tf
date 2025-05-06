@@ -59,9 +59,9 @@ module "aks" {
   dns_prefix                        = local.aks_name
   node_pool_name                    = var.aks_node_pool_name
   node_count                        = var.aks_node_count
-  vm_size                           = var.aks_vm_size
-  os_disk_type                      = var.aks_os_disk_type
-  default_node_pool_os_disk_size_gb = var.default_node_pool_os_disk_size_gb
+  vm_size                           = var.aks_vm_size                       # Make sure this is set via tfvars/env per task spec (e.g. "Standard_D2ads_v5")
+  os_disk_type                      = var.aks_os_disk_type                  # Make sure this is set via tfvars/env per task spec (e.g. "Ephemeral")
+  default_node_pool_os_disk_size_gb = var.default_node_pool_os_disk_size_gb # Make sure this is passed from root variables
   acr_id                            = module.acr.acr_id
   key_vault_id                      = module.keyvault.key_vault_id
   tenant_id                         = data.azurerm_client_config.current.tenant_id
@@ -98,6 +98,7 @@ module "aci" {
   ]
 }
 
+# Kubernetes manifests for deploying the application to AKS
 resource "kubectl_manifest" "secret_provider_class" {
   yaml_body = templatefile("${path.module}/k8s-manifests/secret-provider.yaml.tftpl", {
     kv_name                    = module.keyvault.key_vault_name
@@ -135,13 +136,27 @@ resource "kubectl_manifest" "deployment" {
   ]
 }
 
-data "kubernetes_service" "app" {
+# --- ADD THIS RESOURCE ---
+resource "time_sleep" "wait_for_lb_ip" {
+  # Wait for 5 minutes - increased from 3m
+  create_duration = "5m"
+
+  # Ensure it runs after the service manifest is applied
+  depends_on = [
+    kubectl_manifest.service
+  ]
+}
+# --- END ADD ---
+
+
+# Get the LoadBalancer IP address - Modified depends_on
+data "kubernetes_service" "app" { # Ensure name matches outputs.tf
   metadata {
     name = "redis-flask-app-service"
   }
 
   depends_on = [
-    kubectl_manifest.service,
-    kubectl_manifest.deployment
+    # Ensure data is read AFTER the sleep
+    time_sleep.wait_for_lb_ip
   ]
 }
